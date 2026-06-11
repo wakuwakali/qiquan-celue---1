@@ -40,7 +40,7 @@ def send_wechat_work_msg(content):
         print(f"发送企业微信失败: {e}")
         print(traceback.format_exc())
 
-def fetch_binance_klines(symbol, interval, limit=5000):
+def fetch_binance_klines(symbol, interval, limit=1000):
     """拉取币安现货 K 线数据"""
     url = "https://api.binance.com/api/v3/klines"
     params = {
@@ -51,6 +51,9 @@ def fetch_binance_klines(symbol, interval, limit=5000):
     response = requests.get(url, params=params)
     data = response.json()
     
+    if isinstance(data, dict) and 'code' in data:
+        raise Exception(f"Binance API 返回错误: {data['msg']}")
+        
     df = pd.DataFrame(data, columns=[
         'timestamp', 'open', 'high', 'low', 'close', 'volume',
         'close_time', 'quote_asset_volume', 'number_of_trades',
@@ -65,7 +68,7 @@ def run_monitor():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始执行实盘扫描...")
     try:
         # 1. 获取数据
-        df = fetch_binance_klines(SYMBOL, '1h', limit=5000)
+        df = fetch_binance_klines(SYMBOL, '1h', limit=1000)
         
         # 2. 运行 V10 策略引擎
         signals = holy_grail_strategy(df)
