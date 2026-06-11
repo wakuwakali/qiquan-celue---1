@@ -24,7 +24,7 @@ TIMEFRAME = '1h'
 STATE_FILE = 'current_position.json'
 
 # 测试模式开关：为 True 时，每 10 秒运行一次，且强制发送微信（无视状态是否改变）
-TEST_MODE = True
+TEST_MODE = False
 
 def send_wechat_work_msg(content):
     if not WECHAT_WEBHOOK_URL:
