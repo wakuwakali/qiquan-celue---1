@@ -45,7 +45,8 @@ def send_wechat_work_msg(content):
 
 def fetch_binance_klines(symbol, interval, limit=1000):
     """拉取币安现货 K 线数据"""
-    url = "https://api.binance.com/api/v3/klines"
+    # 使用 Binance Vision 公共数据节点，防止部分服务器 IP 被币安主站风控拦截
+    url = "https://data-api.binance.vision/api/v3/klines"
     params = {
         'symbol': symbol,
         'interval': interval,
