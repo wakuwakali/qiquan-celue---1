@@ -23,6 +23,9 @@ SYMBOL = 'BTCUSDT'
 TIMEFRAME = '1h'
 STATE_FILE = 'current_position.json'
 
+# 测试模式开关：为 True 时，每 10 秒运行一次，且强制发送微信（无视状态是否改变）
+TEST_MODE = True
+
 def send_wechat_work_msg(content):
     if not WECHAT_WEBHOOK_URL:
         print('未配置 WECHAT_WEBHOOK_URL，跳过微信发送')
@@ -87,11 +90,14 @@ def run_monitor():
                 except:
                     pass
         
-        # 5. 判断是否发生变化并报警
-        if latest_signal != last_position:
+        # 5. 判断是否发生变化并报警 (如果 TEST_MODE 为 True，则强制发送)
+        if TEST_MODE or latest_signal != last_position:
             action = "【买入做多】信号触发！" if latest_signal == 1 else "【平仓空仓】信号触发！"
             
+            mode_prefix = "🔧 [测试模式] " if TEST_MODE else ""
             msg = f"【终极圣杯 V10 策略预警】\n标的: {SYMBOL}\n动作: {action}\n当前价格: {latest_close:.2f}\n"
+            msg = mode_prefix + msg
+            
             if latest_signal == 1:
                 msg += "建议：可配置 2倍杠杆或远月期权合成多头。"
             else:
@@ -147,10 +153,16 @@ if __name__ == '__main__':
     
     # 程序启动时立即发送一条确认消息
     startup_msg = "🚀 【系统启动】终极圣杯 V10 实盘监控程序已成功在服务器启动并进入守护模式！\n行情监控与定时播报已就绪。"
+    if TEST_MODE:
+        startup_msg = "⚠️ 【测试模式开启】系统将每 10 秒运行一次，并强制狂轰滥炸发送消息以测试网络！"
     send_wechat_work_msg(startup_msg)
     
-    # 设置定时任务：每小时的第 1 分钟运行
-    schedule.every().hour.at(":01").do(run_monitor)
+    if TEST_MODE:
+        schedule.every(10).seconds.do(run_monitor)
+        print(">> ⚠️ 测试模式已开启，将每 10 秒运行一次。")
+    else:
+        # 设置定时任务：每小时的第 1 分钟运行
+        schedule.every().hour.at(":01").do(run_monitor)
     
     # 设置心跳任务：每天 15:00 发送一条证明在线的消息
     schedule.every().day.at("15:00").do(send_heartbeat)
